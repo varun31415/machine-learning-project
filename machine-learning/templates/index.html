@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Neural Network Example</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <style>
+            #canvas {
+                border: 5px solid gray;
+                width: 280px;
+                height: 280px;
+            }
+            body {
+                margin: 20px; 
+            }
+            div {
+                margin: 10px;
+            }
+        </style>
+    </head>
+    <body>
+            <h1 style="font-size: 40px;">Draw a number from 1 to 10 here: </h1>
+            <canvas id="canvas" ></canvas>
+            <br>
+            <div class="spinner-border text-primary" id="loader" role="status">
+                <span class="sr-only"></span>
+            </div>
+            <br>
+            <button class="btn btn-primary" id="send-data">Find number using Machine Learning</button> 
+            <button class="btn btn-success" id="reset">Reset</button>
+            <div>The number you drew was: <span id="output"></span></div>
+        <script>
+            $("#loader").hide()
+            // create canvas element and append it to document body
+            var canvas = document.getElementById("canvas")
+            canvas.width = 28
+            canvas.height = 28
+
+            document.body.style.margin = 10;
+
+            // get canvas 2D context and set him correct size
+            var ctx = canvas.getContext('2d');
+            resize();
+
+            // last known position
+            var pos = { x: 0, y: 0 };
+
+            window.addEventListener('resize', resize);
+            document.addEventListener('mousemove', draw);
+            document.addEventListener('mousedown', setPosition);
+            document.addEventListener('mouseenter', setPosition);
+
+            // new position from mouse event
+            function setPosition(e) {
+                var rect = canvas.getBoundingClientRect();
+                pos.x = (e.clientX - rect.left) / (rect.right - rect.left) * canvas.width;
+                pos.y = (e.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height;
+            }
+
+            // resize canvas
+            function resize() {
+            }
+
+            function draw(e) {
+                // mouse left button must be pressed
+                if (e.buttons !== 1) return;
+
+                ctx.beginPath(); // begin
+
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = 'blue';
+
+                ctx.moveTo(pos.x, pos.y); // from
+                setPosition(e);
+                ctx.lineTo(pos.x, pos.y); // to
+
+                ctx.stroke(); // draw it!
+            }
+
+            $("#reset").click(function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            })
+            
+            $("#send-data").click(function() {
+                var rect = canvas.getBoundingClientRect();
+                $("#loader").show()
+                console.log(rect.left + ", " + rect.top + ", and " + (rect.left + 280) + ", " + (rect.left + 280)) 
+                $.ajax({
+                    method: "POST",
+                    dataType: "json",
+                    contentType: "application/json",
+                    url: "/predict",
+                    data: JSON.stringify({
+                        data: canvas.toDataURL()
+                    }), success: function (response) {
+                        $("#loader").hide();
+                        $("#output").text(response["number"]);
+                    }, error: function(response){
+                        $("#loader").hide();
+                        alert("Error try reloading your page!");
+                    }
+                })
+            })
+        </script>
+    </body>
+</html>
